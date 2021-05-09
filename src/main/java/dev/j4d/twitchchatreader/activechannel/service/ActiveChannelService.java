@@ -29,6 +29,9 @@ public class ActiveChannelService {
     }
 
     public JoinedState joinNewActiveChannels(List<String> newActiveChannels) {
+        if (newActiveChannels.isEmpty()) {
+            return new JoinedState(List.of(), List.of());
+        }
         logger.debug("Trying to join {} active channels", newActiveChannels.size());
         final var duplicate = repository.getAll(newActiveChannels).stream().map(ActiveChannel::getChannel).collect(Collectors.toUnmodifiableList());
         final var joined = newActiveChannels.stream().filter(channel -> !duplicate.contains(channel)).collect(Collectors.toUnmodifiableList());
