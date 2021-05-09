@@ -1,6 +1,7 @@
 package dev.j4d.twitchchatreader.activechannel.service;
 
 import dev.j4d.twitchchatreader.activechannel.domain.ActiveChannel;
+import dev.j4d.twitchchatreader.activechannel.domain.JoinedState;
 import dev.j4d.twitchchatreader.activechannel.repository.ActiveChannelRepository;
 import dev.j4d.twitchchatreader.twitchconnection.TwitchConnection;
 import org.slf4j.Logger;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Service
 public class ActiveChannelService {
@@ -26,13 +28,16 @@ public class ActiveChannelService {
         this.instant = instant;
     }
 
-    public void joinNewActiveChannels(List<String> activeChannels) {
-        logger.debug("Joining {} active channels", activeChannels.size());
-        activeChannels.forEach(channel -> {
+    public JoinedState joinNewActiveChannels(List<String> newActiveChannels) {
+        logger.debug("Trying to join {} active channels", newActiveChannels.size());
+        final var duplicate = repository.getAll(newActiveChannels).stream().map(ActiveChannel::getChannel).collect(Collectors.toUnmodifiableList());
+        final var joined = newActiveChannels.stream().filter(channel -> !duplicate.contains(channel)).collect(Collectors.toUnmodifiableList());
+        joined.forEach(channel -> {
             repository.insert(channel, instant.get().toString());
             twitchConnection.send("JOIN #" + channel);
         });
-        logger.info("Joined {} active channels", activeChannels.size());
+        logger.info("Joined {} active channels, {} duplicates detected", joined.size(), duplicate.size());
+        return new JoinedState(joined, duplicate);
     }
 
     public void joinActiveChannels() {

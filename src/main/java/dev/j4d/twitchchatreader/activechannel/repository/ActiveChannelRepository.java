@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class ActiveChannelRepository {
@@ -25,6 +26,10 @@ public class ActiveChannelRepository {
 
     public List<ActiveChannel> getAll() {
         return jdbcTemplate.query("SELECT id, channel, time_of_join FROM active_channel ORDER BY id", this::mapRow);
+    }
+
+    public List<ActiveChannel> getAll(List<String> channels) {
+        return jdbcTemplate.query("SELECT id, channel, time_of_join FROM active_channel WHERE channel IN (:channels)", Map.of("channels", channels), this::mapRow);
     }
 
     private MapSqlParameterSource toParams(String channel, String timeOfJoin) {
